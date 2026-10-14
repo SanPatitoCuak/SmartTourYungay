@@ -157,9 +157,35 @@
         .service-marker.svc-hidden { opacity: 0; pointer-events: none; transform: scale(.4); }
         .service-hospital { background: #c8362f; }
         .service-toilet { background: #2f6ea5; }
+        .service-pharmacy { background: #2e9e6b; }
 
         .service-popup b { font-size: 12px; color: #2c362d; display: block; }
         .service-popup span { font-size: 10px; color: #6c8070; }
+
+        /* Buscador */
+        .search-results {
+            margin-top: 8px; background: #fff; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 18px 40px rgba(0,0,0,.35); display: none; max-height: 260px; overflow-y: auto;
+        }
+        .search-results.open { display: block; }
+        .search-item { display: flex; align-items: center; gap: 10px; padding: 10px 13px; cursor: pointer; border-bottom: 1px solid #eef2ee; }
+        .search-item:last-child { border-bottom: none; }
+        .search-item:hover { background: #f4f7f4; }
+        .search-item > i { font-size: 18px; color: #4a5d4e; }
+        .search-item img { width: 36px; height: 36px; border-radius: 9px; object-fit: cover; }
+        .si-name { font-size: 12px; font-weight: 700; color: #2c362d; }
+        .si-sub { font-size: 10px; color: #8a9a8c; }
+
+        /* Marcador de ubicación del usuario */
+        .me-marker {
+            width: 16px; height: 16px; border-radius: 9999px; background: #2b7de9; border: 3px solid #fff;
+            box-shadow: 0 0 0 6px rgba(43,125,233,.28); animation: me-pulse 1.8s infinite;
+        }
+        @keyframes me-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(43,125,233,.5); }
+            70% { box-shadow: 0 0 0 14px rgba(43,125,233,0); }
+            100% { box-shadow: 0 0 0 0 rgba(43,125,233,0); }
+        }
 
         /* Ficha de detalle inferior */
         .place-sheet {
@@ -506,6 +532,7 @@
             <div class="flex gap-2 pointer-events-auto">
                 <button onclick="toggleTour()" title="Tour automático" class="text-white bg-black/30 backdrop-blur-md text-xl p-2 rounded-full hover:bg-black/50 transition-colors"><i id="tour-icon" class="ph ph-play font-bold"></i></button>
                 <button onclick="resetMap3D()" title="Vista general" class="text-white bg-black/30 backdrop-blur-md text-xl p-2 rounded-full hover:bg-black/50 transition-colors"><i class="ph ph-arrows-out font-bold"></i></button>
+                <button onclick="locateMe()" title="Mi ubicación" class="text-white bg-black/30 backdrop-blur-md text-xl p-2 rounded-full hover:bg-black/50 transition-colors"><i id="loc-icon" class="ph ph-crosshair font-bold"></i></button>
             </div>
         </header>
 
@@ -513,13 +540,34 @@
             <!-- Contenedor del mapa 3D (MapLibre GL + imagen satelital + relieve) -->
             <div id="map-3d" class="w-full h-full"></div>
 
-            <!-- Capa de servicios: hospitales y baños -->
-            <div id="services-toggle" class="absolute top-20 left-4 z-30 flex flex-col gap-2">
+            <!-- Buscador de lugares y servicios -->
+            <div class="absolute left-4 right-4 z-40" style="top: 70px;">
+                <div class="flex items-center gap-2 bg-white/95 backdrop-blur-md rounded-full px-4 py-2.5 shadow-lg">
+                    <i class="ph ph-magnifying-glass text-lg text-[#8a9a8c]"></i>
+                    <input id="search-input" type="text" placeholder="Buscar lugar, hospital, baño…" autocomplete="off"
+                           class="flex-1 bg-transparent outline-none text-sm font-semibold text-[#2c362d] placeholder-[#9aab9c]">
+                    <i class="ph ph-x-circle text-lg text-[#8a9a8c] cursor-pointer hidden" id="search-clear" onclick="clearSearch()"></i>
+                </div>
+                <div id="search-results" class="search-results"></div>
+            </div>
+
+            <!-- Interruptores de servicios -->
+            <div id="services-toggle" class="absolute left-4 z-30 flex flex-col gap-2" style="top: 126px;">
                 <button id="btn-hosp" onclick="toggleService('hospital')" class="svc-toggle active" title="Hospitales y postas médicas">
                     <i class="ph-fill ph-first-aid"></i><span>Salud</span>
                 </button>
                 <button id="btn-toilet" onclick="toggleService('toilet')" class="svc-toggle active" title="Baños públicos">
                     <i class="ph-fill ph-toilet"></i><span>Baños</span>
+                </button>
+                <button id="btn-pharm" onclick="toggleService('pharmacy')" class="svc-toggle active" title="Farmacias y boticas">
+                    <i class="ph-fill ph-pill"></i><span>Farmacias</span>
+                </button>
+            </div>
+
+            <!-- Control de capas -->
+            <div class="absolute right-4 z-30 flex flex-col gap-2" style="top: 126px;">
+                <button id="btn-3d" onclick="toggleBuildings()" class="svc-toggle active" title="Edificios 3D">
+                    <i class="ph-fill ph-buildings"></i><span>3D</span>
                 </button>
             </div>
 
@@ -645,6 +693,7 @@
             if (tourTimer) { clearInterval(tourTimer); tourTimer = null; }
             const ti = document.getElementById('tour-icon'); if (ti) ti.className = 'ph ph-play font-bold';
             deselectPlace();
+            if (typeof clearSearch === 'function') clearSearch();
         }
 
         currentScreen = targetScreenId;
@@ -720,7 +769,7 @@
     // Orden de la ruta turística (índices de PLACES)
     const ROUTE = [0, 1, 2, 3, 4, 6];
 
-    // Servicios: salud (datos reales de OpenStreetMap) y baños
+    // Servicios: salud/farmacias (datos reales de OpenStreetMap) y baños
     const SERVICES = [
         { type: 'hospital', name: 'Hospital de Yungay', lng: -77.7452413, lat: -9.1385439 },
         { type: 'hospital', name: 'Posta Médica Yungay', lng: -77.7349310, lat: -9.1570254 },
@@ -730,6 +779,8 @@
         { type: 'hospital', name: 'Puesto de Salud Matacoto', lng: -77.7465173, lat: -9.1753093 },
         { type: 'hospital', name: 'Puesto de Salud Shupluy', lng: -77.6934372, lat: -9.2166035 },
         { type: 'hospital', name: 'Puesto de Salud Cascapara', lng: -77.7176873, lat: -9.2282506 },
+        { type: 'pharmacy', name: 'Farmacia Anita', lng: -77.7450010, lat: -9.1407317 },
+        { type: 'pharmacy', name: 'Botica Nasha', lng: -77.7448000, lat: -9.1388396 },
         // Baños: uno real de OSM y el resto referenciales en los puntos turísticos
         { type: 'toilet', name: 'Baños (carretera a Llanganuco)', lng: -77.7165128, lat: -9.1497802, real: true },
         { type: 'toilet', name: 'Baños - Plaza de Armas', lng: -77.7440, lat: -9.1387, approx: true },
@@ -738,19 +789,22 @@
         { type: 'toilet', name: 'Baños - Mirador Portachuelo', lng: -77.5736, lat: -9.0384, approx: true }
     ];
 
-    const serviceMarkers = { hospital: [], toilet: [] };
-    const serviceVisible = { hospital: true, toilet: true };
-    const SERVICE_LABEL = {
-        hospital: 'Servicio de salud',
-        toilet: 'Baño público (referencial)'
+    const SVC_STYLE = {
+        hospital: { cls: 'service-hospital', icon: 'ph-first-aid', label: 'Servicio de salud', btn: 'btn-hosp' },
+        toilet:   { cls: 'service-toilet',   icon: 'ph-toilet',    label: 'Baño público (referencial)', btn: 'btn-toilet' },
+        pharmacy: { cls: 'service-pharmacy', icon: 'ph-pill',      label: 'Farmacia / botica', btn: 'btn-pharm' }
     };
+
+    const serviceMarkers = { hospital: [], toilet: [], pharmacy: [] };
+    const serviceVisible = { hospital: true, toilet: true, pharmacy: true };
     let servicePopup = null;
 
     function addServiceMarker(s) {
+        const style = SVC_STYLE[s.type];
         const el = document.createElement('div');
-        el.className = 'service-marker ' + (s.type === 'hospital' ? 'service-hospital' : 'service-toilet');
-        el.innerHTML = `<i class="ph-fill ${s.type === 'hospital' ? 'ph-first-aid' : 'ph-toilet'}"></i>`;
-        const label = s.real ? 'Baño público' : SERVICE_LABEL[s.type];
+        el.className = 'service-marker ' + style.cls;
+        el.innerHTML = `<i class="ph-fill ${style.icon}"></i>`;
+        const label = s.real ? 'Baño público' : style.label;
         el.addEventListener('click', e => {
             e.stopPropagation();
             if (servicePopup) servicePopup.remove();
@@ -759,16 +813,120 @@
                 .setHTML(`<div class="service-popup"><b>${s.name}</b><span>${label}</span></div>`)
                 .addTo(map3d);
         });
-        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+        return new maplibregl.Marker({ element: el, anchor: 'center' })
             .setLngLat([s.lng, s.lat]).addTo(map3d);
-        return marker;
     }
 
     function toggleService(kind) {
         serviceVisible[kind] = !serviceVisible[kind];
         serviceMarkers[kind].forEach(m => m.getElement().classList.toggle('svc-hidden', !serviceVisible[kind]));
-        const btn = document.getElementById(kind === 'hospital' ? 'btn-hosp' : 'btn-toilet');
+        const btn = document.getElementById(SVC_STYLE[kind].btn);
         if (btn) btn.classList.toggle('active', serviceVisible[kind]);
+    }
+
+    function openServicePopup(s) {
+        if (servicePopup) servicePopup.remove();
+        servicePopup = new maplibregl.Popup({ closeButton: false, offset: 18, maxWidth: '210px' })
+            .setLngLat([s.lng, s.lat])
+            .setHTML(`<div class="service-popup"><b>${s.name}</b><span>${SVC_STYLE[s.type].label}</span></div>`)
+            .addTo(map3d);
+    }
+
+    // ---- Buscador ----
+    const searchIndex = [];
+    PLACES.forEach((p, i) => searchIndex.push({ kind: 'place', idx: i, name: p.name, sub: 'Lugar turístico', img: p.img }));
+    SERVICES.forEach((s, i) => searchIndex.push({ kind: 'service', idx: i, name: s.name, sub: SVC_STYLE[s.type].label, icon: SVC_STYLE[s.type].icon }));
+    const searchResults = document.getElementById('search-results');
+    const searchInput = document.getElementById('search-input');
+    const searchClear = document.getElementById('search-clear');
+
+    function clearSearch() {
+        if (searchInput) searchInput.value = '';
+        if (searchResults) { searchResults.classList.remove('open'); searchResults.innerHTML = ''; }
+        if (searchClear) searchClear.classList.add('hidden');
+    }
+
+    function onSearchInput() {
+        const term = (searchInput.value || '').trim().toLowerCase();
+        if (searchClear) searchClear.classList.toggle('hidden', !term);
+        if (!term) { searchResults.classList.remove('open'); searchResults.innerHTML = ''; return; }
+        const hits = searchIndex.filter(x => x.name.toLowerCase().includes(term)).slice(0, 7);
+        if (!hits.length) {
+            searchResults.innerHTML = '<div class="search-item"><i class="ph ph-magnifying-glass"></i><span class="si-name">Sin resultados</span></div>';
+            searchResults.classList.add('open');
+            return;
+        }
+        searchResults.innerHTML = hits.map(h => `
+            <div class="search-item" onclick="focusSearchResult('${h.kind}', ${h.idx})">
+                ${h.img ? `<img src="${h.img}" alt="">` : `<i class="ph-fill ${h.icon}"></i>`}
+                <div><div class="si-name">${h.name}</div><div class="si-sub">${h.sub}</div></div>
+            </div>`).join('');
+        searchResults.classList.add('open');
+    }
+    if (searchInput) {
+        searchInput.addEventListener('input', onSearchInput);
+        searchInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { const first = searchResults.querySelector('.search-item'); if (first) first.click(); }
+            else if (e.key === 'Escape') { clearSearch(); }
+        });
+    }
+
+    function focusSearchResult(kind, idx) {
+        searchResults.classList.remove('open');
+        if (searchInput) searchInput.blur();
+        if (kind === 'place') {
+            selectPlace(idx);
+            return;
+        }
+        const s = SERVICES[idx];
+        if (!serviceVisible[s.type]) toggleService(s.type);
+        if (map3d.getZoom() < 14) map3d.flyTo({ center: [s.lng, s.lat], zoom: 15.6, pitch: 60, bearing: -20, duration: 2200, essential: true });
+        else map3d.easeTo({ center: [s.lng, s.lat], zoom: 15.5, duration: 1600 });
+        openServicePopup(s);
+    }
+
+    // ---- Geolocalización ----
+    let meMarker = null;
+    function locateMe() {
+        const icon = document.getElementById('loc-icon');
+        if (!navigator.geolocation) { alert('Tu navegador no soporta geolocalización.'); return; }
+        if (icon) icon.className = 'ph ph-circle-notch font-bold animate-spin';
+        navigator.geolocation.getCurrentPosition(pos => {
+            if (icon) icon.className = 'ph ph-crosshair font-bold';
+            const lng = pos.coords.longitude, lat = pos.coords.latitude;
+            if (meMarker) meMarker.remove();
+            const el = document.createElement('div');
+            el.className = 'me-marker';
+            meMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map3d);
+            map3d.flyTo({ center: [lng, lat], zoom: 15, pitch: 55, bearing: -20, duration: 2200 });
+        }, () => {
+            if (icon) icon.className = 'ph ph-crosshair font-bold';
+            alert('No se pudo obtener tu ubicación.');
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+    }
+
+    // ---- Edificios 3D (OpenFreeMap, sin API key) ----
+    let buildingsOn = true;
+    function initBuildings() {
+        if (map3d.getSource('omt')) return;
+        map3d.addSource('omt', { type: 'vector', url: 'https://tiles.openfreemap.org/planet' });
+        map3d.addLayer({
+            id: 'buildings-3d', type: 'fill-extrusion', source: 'omt', 'source-layer': 'building',
+            minzoom: 14,
+            paint: {
+                'fill-extrusion-color': '#e7dfcd',
+                'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6],
+                'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+                'fill-extrusion-opacity': 0.88
+            }
+        });
+    }
+    function toggleBuildings() {
+        buildingsOn = !buildingsOn;
+        if (map3d.getLayer('buildings-3d'))
+            map3d.setLayoutProperty('buildings-3d', 'visibility', buildingsOn ? 'visible' : 'none');
+        const btn = document.getElementById('btn-3d');
+        if (btn) btn.classList.toggle('active', buildingsOn);
     }
 
     let activeIndex = -1;
@@ -884,6 +1042,7 @@
         });
 
         map3d.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+        map3d.addControl(new maplibregl.ScaleControl({ maxWidth: 90, unit: 'metric' }), 'bottom-left');
 
         map3d.on('load', () => {
             map3d.setTerrain({ source: 'terrain', exaggeration: 1.6 });
@@ -892,6 +1051,9 @@
             try {
                 map3d.setLight({ anchor: 'viewport', color: '#ffffff', intensity: 0.55, position: [1.15, 210, 30] });
             } catch (e) { /* versión sin soporte de luz */ }
+
+            // Edificios 3D del centro del pueblo (capa vectorial gratuita)
+            try { initBuildings(); } catch (e) { console.warn('Edificios 3D no disponibles:', e); }
 
             // Ruta turística punteada, dibujada sobre el terreno
             map3d.addSource('route', {
