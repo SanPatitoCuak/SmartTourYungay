@@ -134,6 +134,33 @@
         /* Etiquetas de marcadores: ocultar cuando el mapa está alejado */
         .zoom-low .marker-label { display: none; }
 
+        /* Interruptores de servicios (salud / baños) */
+        .svc-toggle {
+            display: flex; align-items: center; gap: 6px; padding: 7px 11px; border: none; cursor: pointer;
+            border-radius: 9999px; font-size: 11px; font-weight: 700; color: #2c362d;
+            background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(0,0,0,.28); opacity: .55; transition: opacity .2s, background .2s;
+        }
+        .svc-toggle span { display: inline; }
+        .svc-toggle.active { opacity: 1; }
+        .svc-toggle.active i { filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+        #btn-hosp.active { color: #c8362f; }
+        #btn-toilet.active { color: #2f6ea5; }
+
+        /* Marcadores de servicios en el mapa */
+        .service-marker {
+            width: 30px; height: 30px; border-radius: 9999px; display: flex; align-items: center;
+            justify-content: center; color: #fff; font-size: 16px; border: 2px solid #fff; cursor: pointer;
+            box-shadow: 0 3px 9px rgba(0,0,0,.35); transition: transform .18s ease, opacity .2s;
+        }
+        .service-marker:hover { transform: scale(1.15); }
+        .service-marker.svc-hidden { opacity: 0; pointer-events: none; transform: scale(.4); }
+        .service-hospital { background: #c8362f; }
+        .service-toilet { background: #2f6ea5; }
+
+        .service-popup b { font-size: 12px; color: #2c362d; display: block; }
+        .service-popup span { font-size: 10px; color: #6c8070; }
+
         /* Ficha de detalle inferior */
         .place-sheet {
             position: absolute; left: 12px; right: 12px; bottom: 122px; z-index: 25;
@@ -486,6 +513,16 @@
             <!-- Contenedor del mapa 3D (MapLibre GL + imagen satelital + relieve) -->
             <div id="map-3d" class="w-full h-full"></div>
 
+            <!-- Capa de servicios: hospitales y baños -->
+            <div id="services-toggle" class="absolute top-20 left-4 z-30 flex flex-col gap-2">
+                <button id="btn-hosp" onclick="toggleService('hospital')" class="svc-toggle active" title="Hospitales y postas médicas">
+                    <i class="ph-fill ph-first-aid"></i><span>Salud</span>
+                </button>
+                <button id="btn-toilet" onclick="toggleService('toilet')" class="svc-toggle active" title="Baños públicos">
+                    <i class="ph-fill ph-toilet"></i><span>Baños</span>
+                </button>
+            </div>
+
             <!-- Ficha de detalle del lugar -->
             <div id="place-sheet" class="place-sheet">
                 <button class="sheet-close" onclick="deselectPlace()"><i class="ph ph-x"></i></button>
@@ -683,6 +720,57 @@
     // Orden de la ruta turística (índices de PLACES)
     const ROUTE = [0, 1, 2, 3, 4, 6];
 
+    // Servicios: salud (datos reales de OpenStreetMap) y baños
+    const SERVICES = [
+        { type: 'hospital', name: 'Hospital de Yungay', lng: -77.7452413, lat: -9.1385439 },
+        { type: 'hospital', name: 'Posta Médica Yungay', lng: -77.7349310, lat: -9.1570254 },
+        { type: 'hospital', name: 'Puesto de Salud Huashao', lng: -77.7003697, lat: -9.1294230 },
+        { type: 'hospital', name: 'Puesto de Salud Ranrahirca', lng: -77.7203800, lat: -9.1778787 },
+        { type: 'hospital', name: 'Centro de Salud Mancos', lng: -77.7085820, lat: -9.1884210 },
+        { type: 'hospital', name: 'Puesto de Salud Matacoto', lng: -77.7465173, lat: -9.1753093 },
+        { type: 'hospital', name: 'Puesto de Salud Shupluy', lng: -77.6934372, lat: -9.2166035 },
+        { type: 'hospital', name: 'Puesto de Salud Cascapara', lng: -77.7176873, lat: -9.2282506 },
+        // Baños: uno real de OSM y el resto referenciales en los puntos turísticos
+        { type: 'toilet', name: 'Baños (carretera a Llanganuco)', lng: -77.7165128, lat: -9.1497802, real: true },
+        { type: 'toilet', name: 'Baños - Plaza de Armas', lng: -77.7440, lat: -9.1387, approx: true },
+        { type: 'toilet', name: 'Baños - Campo Santo', lng: -77.7386, lat: -9.1499, approx: true },
+        { type: 'toilet', name: 'Baños - Laguna Chinancocha', lng: -77.6387, lat: -9.0679, approx: true },
+        { type: 'toilet', name: 'Baños - Mirador Portachuelo', lng: -77.5736, lat: -9.0384, approx: true }
+    ];
+
+    const serviceMarkers = { hospital: [], toilet: [] };
+    const serviceVisible = { hospital: true, toilet: true };
+    const SERVICE_LABEL = {
+        hospital: 'Servicio de salud',
+        toilet: 'Baño público (referencial)'
+    };
+    let servicePopup = null;
+
+    function addServiceMarker(s) {
+        const el = document.createElement('div');
+        el.className = 'service-marker ' + (s.type === 'hospital' ? 'service-hospital' : 'service-toilet');
+        el.innerHTML = `<i class="ph-fill ${s.type === 'hospital' ? 'ph-first-aid' : 'ph-toilet'}"></i>`;
+        const label = s.real ? 'Baño público' : SERVICE_LABEL[s.type];
+        el.addEventListener('click', e => {
+            e.stopPropagation();
+            if (servicePopup) servicePopup.remove();
+            servicePopup = new maplibregl.Popup({ closeButton: false, offset: 18, maxWidth: '210px' })
+                .setLngLat([s.lng, s.lat])
+                .setHTML(`<div class="service-popup"><b>${s.name}</b><span>${label}</span></div>`)
+                .addTo(map3d);
+        });
+        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+            .setLngLat([s.lng, s.lat]).addTo(map3d);
+        return marker;
+    }
+
+    function toggleService(kind) {
+        serviceVisible[kind] = !serviceVisible[kind];
+        serviceMarkers[kind].forEach(m => m.getElement().classList.toggle('svc-hidden', !serviceVisible[kind]));
+        const btn = document.getElementById(kind === 'hospital' ? 'btn-hosp' : 'btn-toilet');
+        if (btn) btn.classList.toggle('active', serviceVisible[kind]);
+    }
+
     let activeIndex = -1;
 
     // Referencias a la ficha de detalle
@@ -829,6 +917,9 @@
 
             PLACES.forEach((p, i) => addPlaceMarker(p, i));
             buildCards();
+
+            // Servicios (salud y baños)
+            SERVICES.forEach(s => serviceMarkers[s.type].push(addServiceMarker(s)));
 
             // Ocultar las etiquetas de texto cuando el mapa está alejado
             const mapEl = document.getElementById('map-3d');
