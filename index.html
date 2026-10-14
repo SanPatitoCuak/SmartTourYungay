@@ -205,15 +205,130 @@
         .sheet-meta { font-size: 11px; font-weight: 700; color: #4a5d4e; }
         .sheet-btn {
             display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
-            background: #4a5d4e; color: #fff; font-size: 11px; font-weight: 700;
+            background: linear-gradient(135deg, #5c7360, #3a4a3e); color: #fff; font-size: 11px; font-weight: 700;
             padding: 7px 11px; border-radius: 10px; text-decoration: none;
+            box-shadow: 0 6px 14px rgba(58,74,62,.32);
         }
-        .sheet-btn:hover { background: #3a4a3e; }
+        .sheet-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(58,74,62,.45); }
         .sheet-close {
             position: absolute; top: -10px; right: -6px; width: 26px; height: 26px; border-radius: 9999px;
             background: #2c362d; color: #fff; display: flex; align-items: center; justify-content: center;
             font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,.35); cursor: pointer; border: none;
         }
+
+        /* ====== MEJORAS DE DISEÑO: degradados, micro-interacciones y dinamismo ====== */
+        :root {
+            --g-primary: linear-gradient(135deg, #5c7360 0%, #445a49 55%, #35432f 100%);
+            --g-accent: linear-gradient(135deg, #d8b177 0%, #bd9557 55%, #9c7a45 100%);
+            --g-card: linear-gradient(160deg, #ffffff 0%, #fbf8f1 100%);
+            --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        /* Micro-interacción base en botones, tarjetas y enlaces */
+        button, a, .place-card, .svc-toggle, .map-marker { transition: transform .22s cubic-bezier(.4,0,.2,1), box-shadow .28s ease, background .25s ease, color .2s ease, border-color .2s ease; }
+        button:active { transform: scale(.96); }
+
+        /* Animación de entrada de cada pantalla */
+        .screen.screen-active:not(#screen-map) main > * { animation: fadeUp .55s cubic-bezier(.22,1,.36,1) both; }
+        .screen.screen-active:not(#screen-map) main > *:nth-child(2) { animation-delay: .06s; }
+        .screen.screen-active:not(#screen-map) main > *:nth-child(3) { animation-delay: .12s; }
+        .screen.screen-active:not(#screen-map) main > *:nth-child(4) { animation-delay: .18s; }
+        .screen.screen-active:not(#screen-map) main > *:nth-child(5) { animation-delay: .24s; }
+        .screen.screen-active:not(#screen-map) main > *:nth-child(6) { animation-delay: .30s; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Botón principal con degradado dorado + brillo */
+        .btn-explore {
+            position: relative; overflow: hidden; color: #fff;
+            background: var(--g-accent); box-shadow: 0 14px 30px rgba(156,122,69,.45);
+        }
+        .btn-explore:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(156,122,69,.60); }
+        .btn-explore::after {
+            content: ''; position: absolute; top: 0; left: -130%; width: 55%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,.55), transparent);
+            transform: skewX(-20deg); animation: shine 3.4s infinite;
+        }
+        @keyframes shine { 0% { left: -130%; } 55% { left: 150%; } 100% { left: 150%; } }
+
+        /* Botón secundario tipo vidrio */
+        .btn-ghost {
+            background: linear-gradient(135deg, rgba(255,255,255,.20), rgba(255,255,255,.05));
+            backdrop-filter: blur(8px);
+        }
+        .btn-ghost:hover { transform: translateY(-2px); background: linear-gradient(135deg, rgba(255,255,255,.34), rgba(255,255,255,.14)); }
+
+        /* Tarjetas de categoría con degradado, elevación e ícono animado */
+        button.tile {
+            position: relative; overflow: hidden; border-radius: 22px; border: 1px solid rgba(74,93,78,.10);
+            box-shadow: 0 6px 16px rgba(44,54,45,.06);
+            transition: transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s;
+        }
+        .tile:hover { transform: translateY(-5px); box-shadow: 0 18px 34px rgba(44,54,45,.18); }
+        .tile:active { transform: translateY(-1px) scale(.98); }
+        .tile > div { box-shadow: inset 0 0 0 3px rgba(255,255,255,.55), 0 6px 14px rgba(0,0,0,.06); transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
+        .tile:hover > div { transform: scale(1.12) rotate(-5deg); }
+        .tile::before {
+            content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity .3s;
+            background: radial-gradient(120px 60px at 50% 0%, rgba(255,255,255,.65), transparent 70%);
+        }
+        .tile:hover::before { opacity: 1; }
+        .tile-foods   { background: linear-gradient(140deg, #FBF6EA, #f0e3c8); }
+        .tile-crafts  { background: linear-gradient(140deg, #F2ECF8, #e2d7f1); }
+        .tile-places  { background: linear-gradient(140deg, #EAF6EE, #d5ecdd); }
+        .tile-history { background: linear-gradient(140deg, #FBEDE6, #f4d8c7); }
+        .tile-events  { background: linear-gradient(140deg, #FCF6E4, #f2e3ba); }
+        .tile-map2    { background: linear-gradient(140deg, #E9F1F8, #d1e2f1); }
+
+        /* Botones circulares del mapa */
+        .ctrl-btn {
+            background: linear-gradient(135deg, rgba(20,28,24,.55), rgba(20,28,24,.32)) !important;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.20);
+        }
+        .ctrl-btn:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.45); }
+
+        /* Interruptores de servicios más vivos */
+        .svc-toggle { transition: all .25s cubic-bezier(.4,0,.2,1); }
+        .svc-toggle:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,.30); }
+        .svc-toggle:active { transform: scale(.95); }
+
+        /* Barra de navegación inferior */
+        #bottom-nav { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(250,248,243,.98)); backdrop-filter: blur(12px); box-shadow: 0 -8px 24px rgba(44,54,45,.08); }
+        .nav-item { transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+        .nav-item:hover { transform: translateY(-3px); }
+        .nav-item i { transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+        .nav-item:hover i { transform: scale(1.18); }
+        .nav-fab {
+            background: var(--g-primary) !important; box-shadow: 0 12px 26px rgba(58,74,62,.45);
+            animation: fabPulse 2.8s ease-in-out infinite;
+        }
+        .nav-fab:hover { transform: translateY(-3px) scale(1.06) !important; box-shadow: 0 16px 32px rgba(58,74,62,.6); }
+        @keyframes fabPulse {
+            0%,100% { box-shadow: 0 12px 26px rgba(58,74,62,.45); }
+            50% { box-shadow: 0 12px 30px rgba(189,149,87,.65); }
+        }
+
+        /* Tarjetas de contenido con realce al pasar el cursor */
+        .lift { transition: transform .25s cubic-bezier(.4,0,.2,1), box-shadow .25s; }
+        .lift:hover { transform: translateY(-3px); box-shadow: 0 16px 30px rgba(44,54,45,.14); }
+
+        /* Encabezados con degradado suave */
+        .head-grad { background: linear-gradient(180deg, #Fbf9f4 0%, #Faf8f3 100%); }
+
+        /* Botón de calificar */
+        .rate-btn { background: linear-gradient(135deg, #ffffff, #faf4e8); border: 2px solid rgba(189,149,87,.35); }
+        .rate-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(189,149,87,.28); border-color: rgba(189,149,87,.6); }
+        .rate-btn i { transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+        .rate-btn:hover i { transform: rotate(-12deg) scale(1.15); }
+
+        /* Botón sólido con degradado principal */
+        .btn-primary-solid { background: var(--g-primary); box-shadow: 0 10px 22px rgba(58,74,62,.32); }
+        .btn-primary-solid:hover { transform: translateY(-2px); box-shadow: 0 16px 30px rgba(58,74,62,.45); }
+
+        /* Tarjeta del modal */
+        #rating-card { background: linear-gradient(180deg, #ffffff 0%, #fdfaf3 100%); box-shadow: 0 30px 60px rgba(0,0,0,.35); border: 1px solid rgba(189,149,87,.20); }
+
+        /* Encabezados con leve degradado y separador */
+        header.head-grad { background: linear-gradient(180deg, #Fdfbf6 0%, #Faf8f3 100%); border-bottom: 1px solid rgba(74,93,78,.08); }
     </style>
 </head>
 <body>
@@ -236,10 +351,10 @@
 
             <!-- Botones de Acción -->
             <div class="w-full space-y-4 mb-8">
-                <button onclick="navigateTo('screen-home', 'forward')" class="w-full bg-brand-accent text-white font-serif font-bold text-lg py-4 rounded-2xl shadow-xl hover:bg-[#9c7a4d] transition-colors focus:ring-4 focus:ring-brand-accent/30 outline-none">
+                <button onclick="navigateTo('screen-home', 'forward')" class="btn-explore w-full font-serif font-bold text-lg py-4 rounded-2xl focus:ring-4 focus:ring-brand-accent/30 outline-none">
                     EXPLORAR
                 </button>
-                <button class="w-full bg-transparent border-2 border-white/70 text-white font-serif font-bold text-lg py-4 rounded-2xl shadow-sm hover:bg-white/10 transition-colors backdrop-blur-sm">
+                <button class="btn-ghost w-full border-2 border-white/70 text-white font-serif font-bold text-lg py-4 rounded-2xl shadow-sm">
                     CONÓCENOS
                 </button>
             </div>
@@ -249,7 +364,7 @@
     <!-- PANTALLA 2: DASHBOARD PRINCIPAL -->
     <div id="screen-home" class="screen screen-hidden-right z-10 pb-[80px]">
         
-        <header class="flex justify-between items-center px-6 py-5 bg-brand-bg z-10 sticky top-0">
+        <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg z-10 sticky top-0">
             <button class="text-brand-primary text-2xl"><i class="ph ph-list"></i></button>
             <h1 class="font-serif font-bold text-xl text-brand-primary tracking-wider">YUNGAY</h1>
             <button class="text-brand-primary text-2xl relative">
@@ -284,32 +399,32 @@
 
             <!-- Grid de Categorías -->
             <div class="px-6 grid grid-cols-2 gap-4 mb-6">
-                <button onclick="navigateTo('screen-foods', 'forward')" class="bg-[#F3EFE6] border border-brand-accent/20 rounded-2xl p-4 flex flex-col items-center justify-center hover:shadow-md transition-shadow">
+                <button onclick="navigateTo('screen-foods', 'forward')" class="tile tile-foods p-4 flex flex-col items-center justify-center">
                     <h3 class="font-serif font-bold text-brand-primary mb-2 text-sm">COMIDAS</h3>
                     <div class="w-16 h-16 rounded-full bg-brand-accent/20 flex items-center justify-center text-brand-accent mb-1"><i class="ph-fill ph-bowl-food text-3xl"></i></div>
                 </button>
                 
-                <button onclick="navigateTo('screen-crafts', 'forward')" class="bg-[#EAE6F0] border border-purple-900/10 rounded-2xl p-4 flex flex-col items-center justify-center hover:shadow-md transition-shadow">
+                <button onclick="navigateTo('screen-crafts', 'forward')" class="tile tile-crafts p-4 flex flex-col items-center justify-center">
                     <h3 class="font-serif font-bold text-brand-primary mb-2 text-sm">ARTESANÍAS</h3>
                     <div class="w-16 h-16 rounded-full bg-purple-900/10 flex items-center justify-center text-purple-700 mb-1"><i class="ph-fill ph-tote text-3xl"></i></div>
                 </button>
 
-                <button onclick="navigateTo('screen-list', 'forward')" class="bg-[#E6F0EA] border border-brand-primary/20 rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition-all">
+                <button onclick="navigateTo('screen-list', 'forward')" class="tile tile-places p-4 flex flex-col items-center justify-center">
                     <h3 class="font-serif font-bold text-brand-primary mb-2 text-sm">LUGARES</h3>
                     <div class="w-16 h-16 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary mb-1"><i class="ph-fill ph-mountains text-3xl"></i></div>
                 </button>
 
-                <button onclick="navigateTo('screen-history', 'forward')" class="bg-[#F5EBE6] border border-orange-900/10 rounded-2xl p-4 flex flex-col items-center justify-center hover:shadow-md transition-shadow">
+                <button onclick="navigateTo('screen-history', 'forward')" class="tile tile-history p-4 flex flex-col items-center justify-center">
                     <h3 class="font-serif font-bold text-brand-primary mb-2 text-sm">HISTORIA</h3>
                     <div class="w-16 h-16 rounded-full bg-orange-900/10 flex items-center justify-center text-orange-700 mb-1"><i class="ph-fill ph-scroll text-3xl"></i></div>
                 </button>
 
-                <button onclick="navigateTo('screen-events', 'forward')" class="bg-[#F5F1E6] border border-yellow-900/10 rounded-2xl p-4 flex flex-col items-center justify-center hover:shadow-md transition-shadow">
+                <button onclick="navigateTo('screen-events', 'forward')" class="tile tile-events p-4 flex flex-col items-center justify-center">
                     <h3 class="font-serif font-bold text-brand-primary mb-2 text-sm">EVENTOS</h3>
                     <div class="w-16 h-16 rounded-full bg-yellow-900/10 flex items-center justify-center text-yellow-700 mb-1"><i class="ph-fill ph-calendar-blank text-3xl"></i></div>
                 </button>
 
-                <button onclick="navigateTo('screen-map', 'forward')" class="bg-[#E6EBF0] border border-blue-900/10 rounded-2xl p-4 flex flex-col items-center justify-center hover:shadow-md transition-shadow">
+                <button onclick="navigateTo('screen-map', 'forward')" class="tile tile-map2 p-4 flex flex-col items-center justify-center">
                     <h3 class="font-serif font-bold text-brand-primary mb-2 text-sm">MAPA</h3>
                     <div class="w-16 h-16 rounded-full bg-blue-900/10 flex items-center justify-center text-blue-700 mb-1"><i class="ph-fill ph-map-trifold text-3xl"></i></div>
                 </button>
@@ -317,7 +432,7 @@
             
             <!-- Botón Calificar App -->
             <div class="px-6 mb-8">
-                <button onclick="openRatingModal()" class="w-full bg-white border-2 border-brand-accent/30 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm hover:bg-brand-accent/5 transition-colors">
+                <button onclick="openRatingModal()" class="rate-btn w-full rounded-xl p-4 flex items-center justify-center gap-3">
                     <i class="ph-fill ph-star text-brand-accent text-2xl"></i>
                     <span class="font-serif font-bold text-brand-primary">Calificar la App</span>
                 </button>
@@ -327,14 +442,14 @@
 
     <!-- PANTALLA 3: LUGARES TURÍSTICOS -->
     <div id="screen-list" class="screen screen-hidden-right z-10 pb-[80px]">
-        <header class="flex justify-between items-center px-6 py-5 bg-brand-bg shadow-sm z-10 sticky top-0">
+        <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg shadow-sm z-10 sticky top-0">
             <button onclick="navigateTo('screen-home', 'backward')" class="text-brand-primary text-xl p-2 -ml-2 rounded-full hover:bg-brand-primary/10 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-lg text-brand-primary uppercase">Lugares Turísticos</h1>
             <button class="text-brand-primary text-xl"><i class="ph ph-magnifying-glass"></i></button>
         </header>
         <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
             <!-- Item 1 -->
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1547619292-8816ee7cdd50?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Laguna" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Laguna Llanganuco</h3>
@@ -343,7 +458,7 @@
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
             <!-- Item 2 -->
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Yungay%2C%201980.jpg?width=300" alt="Campo Santo" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Campo Santo de Yungay</h3>
@@ -352,7 +467,7 @@
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
             <!-- Item 3 -->
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1628102491629-778571d893a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Huascarán" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Nevado Huascarán</h3>
@@ -361,7 +476,7 @@
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
              <!-- Item 4 -->
-             <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+             <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1433086966358-54859d0ed716?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Catarata" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Catarata de Rayanniyoc</h3>
@@ -374,13 +489,13 @@
 
     <!-- PANTALLA 4: COMIDAS -->
     <div id="screen-foods" class="screen screen-hidden-right z-10 pb-[80px]">
-        <header class="flex justify-between items-center px-6 py-5 bg-brand-bg shadow-sm z-10 sticky top-0">
+        <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg shadow-sm z-10 sticky top-0">
             <button onclick="navigateTo('screen-home', 'backward')" class="text-brand-primary text-xl p-2 -ml-2 rounded-full hover:bg-brand-primary/10 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-lg text-brand-primary uppercase">Comidas Típicas</h1>
             <button class="text-brand-primary text-xl"><i class="ph ph-magnifying-glass"></i></button>
         </header>
         <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1565557623262-b51c2513a641?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Pachamanca" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Pachamanca a la olla</h3>
@@ -388,7 +503,7 @@
                 </div>
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Picante de Cuy" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Picante de Cuy</h3>
@@ -396,7 +511,7 @@
                 </div>
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Tarwi%20(Lupinus%20mutabilis)%2C%20cultivated%20near%20Puno%2C%20Peru%20(February%202015).JPG?width=300" alt="Tarwi" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Ceviche de Tarwi</h3>
@@ -404,7 +519,7 @@
                 </div>
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Trucha Frita" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Trucha Frita</h3>
@@ -417,13 +532,13 @@
 
     <!-- PANTALLA 5: ARTESANÍAS -->
     <div id="screen-crafts" class="screen screen-hidden-right z-10 pb-[80px]">
-        <header class="flex justify-between items-center px-6 py-5 bg-brand-bg shadow-sm z-10 sticky top-0">
+        <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg shadow-sm z-10 sticky top-0">
             <button onclick="navigateTo('screen-home', 'backward')" class="text-brand-primary text-xl p-2 -ml-2 rounded-full hover:bg-brand-primary/10 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-lg text-brand-primary uppercase">Artesanías</h1>
             <button class="text-brand-primary text-xl"><i class="ph ph-magnifying-glass"></i></button>
         </header>
         <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Llaveros" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Llaveros y Recuerdos</h3>
@@ -431,7 +546,7 @@
                 </div>
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Pinturas" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Pinturas al Óleo</h3>
@@ -439,7 +554,7 @@
                 </div>
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Carteras" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Carteras y Tejidos</h3>
@@ -447,7 +562,7 @@
                 </div>
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
-            <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
+            <div class="lift bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
                 <img src="https://images.unsplash.com/photo-1610701596007-11502861dcfa?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Adornos" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Adornos en Cerámica</h3>
@@ -481,7 +596,7 @@
 
     <!-- PANTALLA 7: EVENTOS -->
     <div id="screen-events" class="screen screen-hidden-right z-10 pb-[80px]">
-        <header class="flex justify-between items-center px-6 py-5 bg-brand-bg shadow-sm z-10 sticky top-0">
+        <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg shadow-sm z-10 sticky top-0">
             <button onclick="navigateTo('screen-home', 'backward')" class="text-brand-primary text-xl p-2 -ml-2 rounded-full hover:bg-brand-primary/10 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-lg text-brand-primary uppercase">Eventos</h1>
             <div class="w-8"></div>
@@ -527,12 +642,12 @@
     <!-- PANTALLA 8: MAPA 3D INTERACTIVO -->
     <div id="screen-map" class="screen screen-hidden-right z-10">
         <header class="absolute top-0 w-full flex justify-between items-center px-4 py-4 bg-gradient-to-b from-black/70 to-transparent z-30 pointer-events-none">
-            <button onclick="navigateTo('screen-home', 'backward')" class="pointer-events-auto text-white bg-black/30 backdrop-blur-md text-xl p-2 rounded-full hover:bg-black/50 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
+            <button onclick="navigateTo('screen-home', 'backward')" class="pointer-events-auto ctrl-btn text-white text-xl p-2 rounded-full"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-base text-white uppercase drop-shadow-md tracking-wide">Yungay en 3D</h1>
             <div class="flex gap-2 pointer-events-auto">
-                <button onclick="toggleTour()" title="Tour automático" class="text-white bg-black/30 backdrop-blur-md text-xl p-2 rounded-full hover:bg-black/50 transition-colors"><i id="tour-icon" class="ph ph-play font-bold"></i></button>
-                <button onclick="resetMap3D()" title="Vista general" class="text-white bg-black/30 backdrop-blur-md text-xl p-2 rounded-full hover:bg-black/50 transition-colors"><i class="ph ph-arrows-out font-bold"></i></button>
-                <button onclick="locateMe()" title="Mi ubicación" class="text-white bg-black/30 backdrop-blur-md text-xl p-2 rounded-full hover:bg-black/50 transition-colors"><i id="loc-icon" class="ph ph-crosshair font-bold"></i></button>
+                <button onclick="toggleTour()" title="Tour automático" class="ctrl-btn text-white text-xl p-2 rounded-full"><i id="tour-icon" class="ph ph-play font-bold"></i></button>
+                <button onclick="resetMap3D()" title="Vista general" class="ctrl-btn text-white text-xl p-2 rounded-full"><i class="ph ph-arrows-out font-bold"></i></button>
+                <button onclick="locateMe()" title="Mi ubicación" class="ctrl-btn text-white text-xl p-2 rounded-full"><i id="loc-icon" class="ph ph-crosshair font-bold"></i></button>
             </div>
         </header>
 
@@ -596,23 +711,23 @@
     <!-- TAB BAR INFERIOR -->
     <nav id="bottom-nav" class="absolute bottom-0 w-full bg-white border-t border-brand-primary/10 px-6 py-4 z-50 transition-transform duration-300 transform translate-y-full">
         <div class="flex justify-between items-center">
-            <button onclick="navigateTo('screen-home', 'backward')" class="flex flex-col items-center text-brand-primary group">
+            <button onclick="navigateTo('screen-home', 'backward')" class="nav-item flex flex-col items-center text-brand-primary group">
                 <i class="ph-fill ph-house text-2xl mb-1 group-hover:scale-110 transition-transform"></i>
                 <span class="text-[10px] font-bold">Inicio</span>
             </button>
-            <button class="flex flex-col items-center text-brand-secondary hover:text-brand-primary transition-colors group">
+            <button class="nav-item flex flex-col items-center text-brand-secondary hover:text-brand-primary transition-colors group">
                 <i class="ph ph-heart text-2xl mb-1 group-hover:scale-110 transition-transform"></i>
                 <span class="text-[10px] font-medium">Favoritos</span>
             </button>
             <!-- Botón Mapa Central -->
-            <button onclick="navigateTo('screen-map', 'forward')" class="relative -top-5 bg-brand-primary text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-brand-primary/40 hover:bg-[#3a4a3e] transition-colors border-4 border-white">
+            <button onclick="navigateTo('screen-map', 'forward')" class="nav-fab relative -top-5 text-white w-14 h-14 rounded-full flex items-center justify-center border-4 border-white">
                 <i class="ph ph-map-trifold text-2xl"></i>
             </button>
-            <button onclick="navigateTo('screen-events', 'forward')" class="flex flex-col items-center text-brand-secondary hover:text-brand-primary transition-colors group">
+            <button onclick="navigateTo('screen-events', 'forward')" class="nav-item flex flex-col items-center text-brand-secondary hover:text-brand-primary transition-colors group">
                 <i class="ph ph-calendar-blank text-2xl mb-1 group-hover:scale-110 transition-transform"></i>
                 <span class="text-[10px] font-medium">Eventos</span>
             </button>
-            <button class="flex flex-col items-center text-brand-secondary hover:text-brand-primary transition-colors group">
+            <button class="nav-item flex flex-col items-center text-brand-secondary hover:text-brand-primary transition-colors group">
                 <i class="ph ph-user text-2xl mb-1 group-hover:scale-110 transition-transform"></i>
                 <span class="text-[10px] font-medium">Perfil</span>
             </button>
@@ -638,7 +753,7 @@
             </div>
 
             <div class="w-full space-y-3">
-                <button onclick="closeRatingModal()" class="w-full bg-brand-primary text-white font-bold py-3 rounded-xl shadow-md hover:bg-[#3a4a3e]">Enviar Calificación</button>
+                <button onclick="closeRatingModal()" class="btn-primary-solid w-full text-white font-bold py-3 rounded-xl">Enviar Calificación</button>
                 <button onclick="closeRatingModal()" class="w-full bg-gray-100 text-brand-secondary font-bold py-3 rounded-xl hover:bg-gray-200">Quizás más tarde</button>
             </div>
         </div>
