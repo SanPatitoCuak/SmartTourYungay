@@ -2,7 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#4a5d4e">
+    <meta name="color-scheme" content="light">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SmartTour Yungay">
+    <meta name="format-detection" content="telephone=no">
     <title>SmartTour Yungay - Mockup Completo</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -35,6 +42,8 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     
     <style>
+        html, body { height: 100%; }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #e5e7eb;
@@ -42,15 +51,40 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            min-height: 100dvh;
             margin: 0;
+            overscroll-behavior: none;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-tap-highlight-color: transparent;
         }
 
         h1, h2, h3, .font-serif { font-family: 'Lora', serif; }
+
+        /* Comportamiento táctil móvil */
+        button, a, input, label, [onclick] { touch-action: manipulation; }
+        header, nav, .tile, .ctrl-btn, .svc-toggle, .nav-fab, .place-card, .sheet-btn {
+            -webkit-user-select: none; user-select: none;
+        }
+        .lift:active { transform: scale(.98); }
+        .place-card:active { transform: scale(.97); }
+        .screen main, .hide-scrollbar, .search-results, #place-cards {
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Evita el auto-zoom de iOS en los campos de texto */
+        @media (max-width: 640px) {
+            input, textarea, select { font-size: 16px; }
+        }
 
         .app-container {
             width: 100%;
             max-width: 400px;
             height: 100vh;
+            height: 100dvh;
             max-height: 850px;
             background-color: #Faf8f3;
             position: relative;
@@ -62,6 +96,7 @@
         @media (min-width: 640px) {
             .app-container {
                 height: 90vh;
+                height: 90dvh;
                 border-radius: 40px;
                 border: 12px solid #1f2937;
             }
@@ -91,8 +126,8 @@
         /* Mapa 3D (MapLibre) */
         #map-3d { width: 100%; height: 100%; background-color: #a9bccb; }
         .maplibregl-ctrl-attrib { font-size: 9px; }
-        .maplibregl-ctrl-bottom-right { margin-bottom: 130px; }
-        .maplibregl-ctrl-bottom-left { margin-bottom: 130px; }
+        .maplibregl-ctrl-bottom-right { margin-bottom: calc(130px + env(safe-area-inset-bottom)); }
+        .maplibregl-ctrl-bottom-left { margin-bottom: calc(130px + env(safe-area-inset-bottom)); }
 
         /* Marcador con foto del lugar */
         .map-marker { cursor: pointer; display: flex; flex-direction: column; align-items: center; }
@@ -189,7 +224,7 @@
 
         /* Ficha de detalle inferior */
         .place-sheet {
-            position: absolute; left: 12px; right: 12px; bottom: 122px; z-index: 25;
+            position: absolute; left: 12px; right: 12px; bottom: calc(122px + env(safe-area-inset-bottom)); z-index: 25;
             background: #fff; border-radius: 18px; padding: 12px; display: flex; gap: 12px;
             box-shadow: 0 18px 40px rgba(0,0,0,.42);
             transform: translateY(24px) scale(.98); opacity: 0; pointer-events: none;
@@ -283,6 +318,8 @@
         .ctrl-btn {
             background: linear-gradient(135deg, rgba(20,28,24,.55), rgba(20,28,24,.32)) !important;
             backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.20);
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 44px; height: 44px;
         }
         .ctrl-btn:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.45); }
 
@@ -292,11 +329,23 @@
         .svc-toggle:active { transform: scale(.95); }
 
         /* Barra de navegación inferior */
-        #bottom-nav { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(250,248,243,.98)); backdrop-filter: blur(12px); box-shadow: 0 -8px 24px rgba(44,54,45,.08); }
-        .nav-item { transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+        #bottom-nav {
+            background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(250,248,243,.98));
+            backdrop-filter: blur(12px); box-shadow: 0 -8px 24px rgba(44,54,45,.08);
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+        }
+        .nav-item { min-width: 46px; min-height: 46px; justify-content: center; padding: 4px 6px; }
+        .nav-item { position: relative; transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
         .nav-item:hover { transform: translateY(-3px); }
         .nav-item i { transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
         .nav-item:hover i { transform: scale(1.18); }
+        .nav-item.active { color: #4a5d4e; }
+        .nav-item.active i { transform: translateY(-1px) scale(1.12); }
+        .nav-item.active::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 5px; height: 5px; border-radius: 9999px; background: #b58f5c;
+            box-shadow: 0 0 0 3px rgba(181,143,92,.18);
+        }
         .nav-fab {
             background: var(--g-primary) !important; box-shadow: 0 12px 26px rgba(58,74,62,.45);
             animation: fabPulse 2.8s ease-in-out infinite;
@@ -328,7 +377,17 @@
         #rating-card { background: linear-gradient(180deg, #ffffff 0%, #fdfaf3 100%); box-shadow: 0 30px 60px rgba(0,0,0,.35); border: 1px solid rgba(189,149,87,.20); }
 
         /* Encabezados con leve degradado y separador */
-        header.head-grad { background: linear-gradient(180deg, #Fdfbf6 0%, #Faf8f3 100%); border-bottom: 1px solid rgba(74,93,78,.08); }
+        header.head-grad {
+            background: linear-gradient(180deg, #Fdfbf6 0%, #Faf8f3 100%);
+            border-bottom: 1px solid rgba(74,93,78,.08);
+            padding-top: calc(1.25rem + env(safe-area-inset-top));
+        }
+        /* Barra superior del mapa: respeta la zona de estado */
+        #screen-map > header { padding-top: calc(1rem + env(safe-area-inset-top)); }
+
+        /* Áreas táctiles cómodas en cabeceras y controles */
+        header button, #bottom-nav button, .ctrl-btn, .svc-toggle { min-height: 44px; }
+        header button { display: inline-flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -362,7 +421,7 @@
     </div>
 
     <!-- PANTALLA 2: DASHBOARD PRINCIPAL -->
-    <div id="screen-home" class="screen screen-hidden-right z-10 pb-[80px]">
+    <div id="screen-home" class="screen screen-hidden-right z-10 pb-[calc(80px_+_env(safe-area-inset-bottom))]">
         
         <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg z-10 sticky top-0">
             <button class="text-brand-primary text-2xl"><i class="ph ph-list"></i></button>
@@ -441,7 +500,7 @@
     </div>
 
     <!-- PANTALLA 3: LUGARES TURÍSTICOS -->
-    <div id="screen-list" class="screen screen-hidden-right z-10 pb-[80px]">
+    <div id="screen-list" class="screen screen-hidden-right z-10 pb-[calc(80px_+_env(safe-area-inset-bottom))]">
         <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg shadow-sm z-10 sticky top-0">
             <button onclick="navigateTo('screen-home', 'backward')" class="text-brand-primary text-xl p-2 -ml-2 rounded-full hover:bg-brand-primary/10 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-lg text-brand-primary uppercase">Lugares Turísticos</h1>
@@ -488,7 +547,7 @@
     </div>
 
     <!-- PANTALLA 4: COMIDAS -->
-    <div id="screen-foods" class="screen screen-hidden-right z-10 pb-[80px]">
+    <div id="screen-foods" class="screen screen-hidden-right z-10 pb-[calc(80px_+_env(safe-area-inset-bottom))]">
         <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg shadow-sm z-10 sticky top-0">
             <button onclick="navigateTo('screen-home', 'backward')" class="text-brand-primary text-xl p-2 -ml-2 rounded-full hover:bg-brand-primary/10 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-lg text-brand-primary uppercase">Comidas Típicas</h1>
@@ -531,7 +590,7 @@
     </div>
 
     <!-- PANTALLA 5: ARTESANÍAS -->
-    <div id="screen-crafts" class="screen screen-hidden-right z-10 pb-[80px]">
+    <div id="screen-crafts" class="screen screen-hidden-right z-10 pb-[calc(80px_+_env(safe-area-inset-bottom))]">
         <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg shadow-sm z-10 sticky top-0">
             <button onclick="navigateTo('screen-home', 'backward')" class="text-brand-primary text-xl p-2 -ml-2 rounded-full hover:bg-brand-primary/10 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-lg text-brand-primary uppercase">Artesanías</h1>
@@ -574,7 +633,7 @@
     </div>
 
     <!-- PANTALLA 6: HISTORIA -->
-    <div id="screen-history" class="screen screen-hidden-right z-10 pb-[80px] bg-[#F5EBE6]">
+    <div id="screen-history" class="screen screen-hidden-right z-10 pb-[calc(80px_+_env(safe-area-inset-bottom))] bg-[#F5EBE6]">
         <header class="flex justify-between items-center px-6 py-5 bg-[#F5EBE6] shadow-sm z-10 sticky top-0">
             <button onclick="navigateTo('screen-home', 'backward')" class="text-brand-primary text-xl p-2 -ml-2 rounded-full hover:bg-brand-primary/10 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-lg text-brand-primary uppercase">Nuestra Historia</h1>
@@ -595,7 +654,7 @@
     </div>
 
     <!-- PANTALLA 7: EVENTOS -->
-    <div id="screen-events" class="screen screen-hidden-right z-10 pb-[80px]">
+    <div id="screen-events" class="screen screen-hidden-right z-10 pb-[calc(80px_+_env(safe-area-inset-bottom))]">
         <header class="flex justify-between items-center px-6 py-5 head-grad bg-brand-bg shadow-sm z-10 sticky top-0">
             <button onclick="navigateTo('screen-home', 'backward')" class="text-brand-primary text-xl p-2 -ml-2 rounded-full hover:bg-brand-primary/10 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
             <h1 class="font-serif font-bold text-lg text-brand-primary uppercase">Eventos</h1>
@@ -656,7 +715,7 @@
             <div id="map-3d" class="w-full h-full"></div>
 
             <!-- Buscador de lugares y servicios -->
-            <div class="absolute left-4 right-4 z-40" style="top: 70px;">
+            <div class="absolute left-4 right-4 z-40" style="top: calc(70px + env(safe-area-inset-top));">
                 <div class="flex items-center gap-2 bg-white/95 backdrop-blur-md rounded-full px-4 py-2.5 shadow-lg">
                     <i class="ph ph-magnifying-glass text-lg text-[#8a9a8c]"></i>
                     <input id="search-input" type="text" placeholder="Buscar lugar, hospital, baño…" autocomplete="off"
@@ -667,7 +726,7 @@
             </div>
 
             <!-- Interruptores de servicios -->
-            <div id="services-toggle" class="absolute left-4 z-30 flex flex-col gap-2" style="top: 126px;">
+            <div id="services-toggle" class="absolute left-4 z-30 flex flex-col gap-2" style="top: calc(126px + env(safe-area-inset-top));">
                 <button id="btn-hosp" onclick="toggleService('hospital')" class="svc-toggle active" title="Hospitales y postas médicas">
                     <i class="ph-fill ph-first-aid"></i><span>Salud</span>
                 </button>
@@ -680,7 +739,7 @@
             </div>
 
             <!-- Control de capas -->
-            <div class="absolute right-4 z-30 flex flex-col gap-2" style="top: 126px;">
+            <div class="absolute right-4 z-30 flex flex-col gap-2" style="top: calc(126px + env(safe-area-inset-top));">
                 <button id="btn-3d" onclick="toggleBuildings()" class="svc-toggle active" title="Edificios 3D">
                     <i class="ph-fill ph-buildings"></i><span>3D</span>
                 </button>
@@ -702,7 +761,7 @@
             </div>
 
             <!-- Carrusel de lugares (con fotos reales) -->
-            <div class="absolute bottom-4 left-0 right-0 z-20">
+            <div class="absolute bottom-[calc(1rem_+_env(safe-area-inset-bottom))] left-0 right-0 z-20">
                 <div id="place-cards" class="flex gap-3 overflow-x-auto hide-scrollbar px-4 pb-1"></div>
             </div>
         </main>
@@ -711,7 +770,7 @@
     <!-- TAB BAR INFERIOR -->
     <nav id="bottom-nav" class="absolute bottom-0 w-full bg-white border-t border-brand-primary/10 px-6 py-4 z-50 transition-transform duration-300 transform translate-y-full">
         <div class="flex justify-between items-center">
-            <button onclick="navigateTo('screen-home', 'backward')" class="nav-item flex flex-col items-center text-brand-primary group">
+            <button onclick="navigateTo('screen-home', 'backward')" data-target="screen-home" class="nav-item active flex flex-col items-center text-brand-primary group">
                 <i class="ph-fill ph-house text-2xl mb-1 group-hover:scale-110 transition-transform"></i>
                 <span class="text-[10px] font-bold">Inicio</span>
             </button>
@@ -723,7 +782,7 @@
             <button onclick="navigateTo('screen-map', 'forward')" class="nav-fab relative -top-5 text-white w-14 h-14 rounded-full flex items-center justify-center border-4 border-white">
                 <i class="ph ph-map-trifold text-2xl"></i>
             </button>
-            <button onclick="navigateTo('screen-events', 'forward')" class="nav-item flex flex-col items-center text-brand-secondary hover:text-brand-primary transition-colors group">
+            <button onclick="navigateTo('screen-events', 'forward')" data-target="screen-events" class="nav-item flex flex-col items-center text-brand-secondary hover:text-brand-primary transition-colors group">
                 <i class="ph ph-calendar-blank text-2xl mb-1 group-hover:scale-110 transition-transform"></i>
                 <span class="text-[10px] font-medium">Eventos</span>
             </button>
@@ -797,6 +856,11 @@
         } else {
             bottomNav.classList.remove('translate-y-full');
         }
+
+        // Indicador de pestaña activa en la barra inferior
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.target === targetScreenId);
+        });
 
         if (targetScreenId === 'screen-map' && map3d) {
             setTimeout(() => {
