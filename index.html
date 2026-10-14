@@ -224,7 +224,7 @@
     <div id="screen-splash" class="screen screen-active z-20">
         <!-- Fondo del Huascarán oscuro -->
         <div class="absolute inset-0 z-0">
-            <img src="https://images.unsplash.com/photo-1588714081048-c2117fc04705?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Huascarán Fondo" class="w-full h-full object-cover">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Nevado%20Huascar%C3%A1n%20(south%20view).jpg?width=900" alt="Nevado Huascarán" class="w-full h-full object-cover">
             <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-brand-primary/90"></div>
         </div>
 
@@ -344,7 +344,7 @@
             </div>
             <!-- Item 2 -->
             <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
-                <img src="https://images.unsplash.com/photo-1526392060635-9d601988106a?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Campo Santo" class="w-[80px] h-[80px] rounded-xl object-cover">
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Yungay%2C%201980.jpg?width=300" alt="Campo Santo" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Campo Santo de Yungay</h3>
                     <p class="text-xs text-brand-secondary leading-tight">Lugar de memoria e historia del trágico sismo.</p>
@@ -397,7 +397,7 @@
                 <button class="absolute right-4 top-1/2 -translate-y-1/2 text-brand-secondary hover:text-red-500"><i class="ph ph-heart text-xl"></i></button>
             </div>
             <div class="bg-white rounded-[20px] p-3 flex items-center shadow-sm border border-brand-primary/5 relative">
-                <img src="https://images.unsplash.com/photo-1548943487-a2e4e43b4859?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Tarwi" class="w-[80px] h-[80px] rounded-xl object-cover">
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Tarwi%20(Lupinus%20mutabilis)%2C%20cultivated%20near%20Puno%2C%20Peru%20(February%202015).JPG?width=300" alt="Tarwi" class="w-[80px] h-[80px] rounded-xl object-cover">
                 <div class="ml-4 flex-1 pr-6">
                     <h3 class="font-serif font-bold text-brand-primary text-sm mb-1">Ceviche de Tarwi</h3>
                     <p class="text-xs text-brand-secondary leading-tight">Grano andino muy rico en proteínas y gran sabor.</p>
@@ -466,7 +466,7 @@
             <div class="w-8"></div><!-- Spacer -->
         </header>
         <main class="flex-1 overflow-y-auto px-6 py-6 text-brand-text">
-            <img src="https://images.unsplash.com/photo-1526392060635-9d601988106a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Yungay Historia" class="w-full h-[200px] object-cover rounded-2xl mb-6 shadow-md border-4 border-white">
+            <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Pueblo%20de%20Yungay%20en%20%C3%81ncash%20Per%C3%BA.jpg?width=800" alt="Yungay Historia" class="w-full h-[200px] object-cover rounded-2xl mb-6 shadow-md border-4 border-white">
             
             <h2 class="font-serif font-bold text-2xl text-brand-primary mb-3">Los Orígenes</h2>
             <p class="text-sm mb-6 leading-relaxed">Conocida históricamente como la "Perla del Callejón de Huaylas", Yungay fue fundada formalmente en 1540. Por siglos, se destacó por su belleza paisajística, su clima primaveral y la rica cultura andina que floreció en las faldas del majestuoso Huascarán.</p>
@@ -689,11 +689,8 @@
                 if (!introDone) { introDone = true; cinematicIntro(); }
             }, 420);
         } else if (currentScreen === 'screen-map') {
-            // Detener el tour y cerrar la ficha al salir del mapa
-            if (tourTimer) { clearInterval(tourTimer); tourTimer = null; }
-            const ti = document.getElementById('tour-icon'); if (ti) ti.className = 'ph ph-play font-bold';
-            deselectPlace();
-            if (typeof clearSearch === 'function') clearSearch();
+            // Al salir del mapa: restablecerlo por completo para que se "recargue" al volver
+            if (typeof resetMapState === 'function') resetMapState();
         }
 
         currentScreen = targetScreenId;
@@ -1118,6 +1115,30 @@
         document.getElementById('tour-icon').className = 'ph ph-play font-bold';
         deselectPlace();
         map3d.flyTo({ center: YUNGAY_CENTER, zoom: 12.2, pitch: 60, bearing: -22, duration: 1600 });
+    }
+
+    // Al salir de la pantalla del mapa: lo devuelve a su estado inicial
+    // para que se "recargue" (con la intro) la próxima vez que se entra.
+    function resetMapState() {
+        if (!map3d) return;
+        if (tourTimer) { clearInterval(tourTimer); tourTimer = null; }
+        const ti = document.getElementById('tour-icon'); if (ti) ti.className = 'ph ph-play font-bold';
+        deselectPlace();
+        if (typeof clearSearch === 'function') clearSearch();
+        if (servicePopup) { servicePopup.remove(); servicePopup = null; }
+        if (meMarker) { meMarker.remove(); meMarker = null; }
+        // Volver a mostrar todos los servicios y edificios
+        ['hospital', 'toilet', 'pharmacy'].forEach(k => {
+            serviceVisible[k] = true;
+            serviceMarkers[k].forEach(m => m.getElement().classList.remove('svc-hidden'));
+            const b = document.getElementById(SVC_STYLE[k].btn); if (b) b.classList.add('active');
+        });
+        buildingsOn = true;
+        if (map3d.getLayer('buildings-3d')) map3d.setLayoutProperty('buildings-3d', 'visibility', 'visible');
+        const b3 = document.getElementById('btn-3d'); if (b3) b3.classList.add('active');
+        // Reiniciar la vista y permitir que la intro cinematográfica se repita
+        introDone = false;
+        map3d.jumpTo({ center: YUNGAY_CENTER, zoom: 10.4, pitch: 0, bearing: 0 });
     }
 
     window.onload = () => {
