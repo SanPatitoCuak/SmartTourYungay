@@ -130,6 +130,37 @@
             display: block; font-size: 10px; font-weight: 700; color: #2c362d;
             padding: 6px 8px; line-height: 1.2;
         }
+
+        /* Etiquetas de marcadores: ocultar cuando el mapa está alejado */
+        .zoom-low .marker-label { display: none; }
+
+        /* Ficha de detalle inferior */
+        .place-sheet {
+            position: absolute; left: 12px; right: 12px; bottom: 122px; z-index: 25;
+            background: #fff; border-radius: 18px; padding: 12px; display: flex; gap: 12px;
+            box-shadow: 0 18px 40px rgba(0,0,0,.42);
+            transform: translateY(24px) scale(.98); opacity: 0; pointer-events: none;
+            transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+        }
+        .place-sheet.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+        .place-sheet > img { width: 92px; height: 92px; border-radius: 12px; object-fit: cover; flex: 0 0 auto; }
+        .sheet-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .sheet-tag { font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #b58f5c; }
+        .place-sheet h3 { font-family: 'Lora', serif; font-weight: 700; color: #4a5d4e; font-size: 15px; margin: 1px 0 3px; }
+        .place-sheet p { font-size: 11px; color: #6c8070; margin: 0 0 6px; line-height: 1.3; }
+        .sheet-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
+        .sheet-meta { font-size: 11px; font-weight: 700; color: #4a5d4e; }
+        .sheet-btn {
+            display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+            background: #4a5d4e; color: #fff; font-size: 11px; font-weight: 700;
+            padding: 7px 11px; border-radius: 10px; text-decoration: none;
+        }
+        .sheet-btn:hover { background: #3a4a3e; }
+        .sheet-close {
+            position: absolute; top: -10px; right: -6px; width: 26px; height: 26px; border-radius: 9999px;
+            background: #2c362d; color: #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,.35); cursor: pointer; border: none;
+        }
     </style>
 </head>
 <body>
@@ -455,6 +486,21 @@
             <!-- Contenedor del mapa 3D (MapLibre GL + imagen satelital + relieve) -->
             <div id="map-3d" class="w-full h-full"></div>
 
+            <!-- Ficha de detalle del lugar -->
+            <div id="place-sheet" class="place-sheet">
+                <button class="sheet-close" onclick="deselectPlace()"><i class="ph ph-x"></i></button>
+                <img id="sheet-img" src="" alt="">
+                <div class="sheet-body">
+                    <span class="sheet-tag" id="sheet-tag">Lugar</span>
+                    <h3 id="sheet-name"></h3>
+                    <p id="sheet-desc"></p>
+                    <div class="sheet-bottom">
+                        <span class="sheet-meta" id="sheet-meta"></span>
+                        <a id="sheet-maps" href="#" target="_blank" rel="noopener" class="sheet-btn"><i class="ph-fill ph-navigation-arrow"></i> Cómo llegar</a>
+                    </div>
+                </div>
+            </div>
+
             <!-- Carrusel de lugares (con fotos reales) -->
             <div class="absolute bottom-4 left-0 right-0 z-20">
                 <div id="place-cards" class="flex gap-3 overflow-x-auto hide-scrollbar px-4 pb-1"></div>
@@ -553,11 +599,15 @@
         }
 
         if (targetScreenId === 'screen-map' && map3d) {
-            setTimeout(() => map3d.resize(), 420);
-        } else if (tourTimer) {
-            // Detener el tour automático al salir del mapa
-            clearInterval(tourTimer); tourTimer = null;
+            setTimeout(() => {
+                map3d.resize();
+                if (!introDone) { introDone = true; cinematicIntro(); }
+            }, 420);
+        } else if (currentScreen === 'screen-map') {
+            // Detener el tour y cerrar la ficha al salir del mapa
+            if (tourTimer) { clearInterval(tourTimer); tourTimer = null; }
             const ti = document.getElementById('tour-icon'); if (ti) ti.className = 'ph ph-play font-bold';
+            deselectPlace();
         }
 
         currentScreen = targetScreenId;
@@ -607,36 +657,42 @@
     const WIKI = f => 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f) + '?width=640';
 
     const PLACES = [
-        { name: 'Plaza de Armas', lng: -77.7444, lat: -9.1389,
+        { name: 'Plaza de Armas', cat: 'Ciudad', alt: 2458, lng: -77.7444, lat: -9.1389,
           img: WIKI('Pueblo de Yungay en Áncash Perú.jpg'),
           desc: 'Corazón de la nueva Yungay, reconstruida tras el aluvión de 1970.' },
-        { name: 'Campo Santo', lng: -77.7380, lat: -9.1505,
+        { name: 'Campo Santo', cat: 'Memorial', alt: 2458, lng: -77.7380, lat: -9.1505,
           img: WIKI('Yungay, 1980.jpg'),
           desc: 'Memorial de la antigua ciudad sepultada el 31 de mayo de 1970.' },
-        { name: 'Laguna Chinancocha', lng: -77.6381, lat: -9.0675,
+        { name: 'Laguna Chinancocha', cat: 'Laguna', alt: 3820, lng: -77.6381, lat: -9.0675,
           img: WIKI("Heaven's Gate Laguna de Chinancocha 02.jpg"),
-          desc: 'Laguna turquesa del valle de Llanganuco (3820 msnm).' },
-        { name: 'Laguna Orconcocha', lng: -77.6289, lat: -9.0606,
+          desc: 'Laguna turquesa del valle de Llanganuco, la más visitada.' },
+        { name: 'Laguna Orconcocha', cat: 'Laguna', alt: 3860, lng: -77.6289, lat: -9.0606,
           img: WIKI('Llanganuco lakes (6020898353).jpg'),
           desc: 'La "laguna macho", más alta, en la quebrada de Llanganuco.' },
-        { name: 'Mirador de Portachuelo', lng: -77.5730, lat: -9.0380,
+        { name: 'Mirador de Portachuelo', cat: 'Mirador', alt: 4580, lng: -77.5730, lat: -9.0380,
           img: WIKI('Chopicalqui and Huascarán (south) glaciers from Km 42 (road to Portachuelo), Cordillera Blanca 03.jpg'),
-          desc: 'Vista panorámica de lagunas y nevados (4580 msnm).' },
-        { name: 'Nevado Huascarán', lng: -77.6042, lat: -9.1217,
+          desc: 'Vista panorámica de las lagunas y los nevados de la Cordillera Blanca.' },
+        { name: 'Nevado Huascarán', cat: 'Montaña', alt: 6768, lng: -77.6042, lat: -9.1217,
           img: WIKI('Nevado Huascarán (south view).jpg'),
-          desc: 'La cumbre más alta del Perú (6768 msnm).' },
-        { name: 'Laguna 69', lng: -77.6122, lat: -9.0097,
+          desc: 'La cumbre más alta del Perú, símbolo de la Cordillera Blanca.' },
+        { name: 'Laguna 69', cat: 'Laguna', alt: 4604, lng: -77.6122, lat: -9.0097,
           img: WIKI('Laguna 69, Yungay - Huaraz - Perú.jpg'),
           desc: 'Icónica laguna turquesa de la quebrada Demanda.' }
     ];
 
-    let activeIndex = -1;
-    let flyPopup = null;
+    // Orden de la ruta turística (índices de PLACES)
+    const ROUTE = [0, 1, 2, 3, 4, 6];
 
-    function placePopupHTML(p) {
-        return `<div class="popup-card"><img src="${p.img}" alt="" onerror="this.style.display='none'">
-            <h4>${p.name}</h4><p>${p.desc}</p></div>`;
-    }
+    let activeIndex = -1;
+
+    // Referencias a la ficha de detalle
+    const placeSheet = document.getElementById('place-sheet');
+    const sheetImg = document.getElementById('sheet-img');
+    const sheetName = document.getElementById('sheet-name');
+    const sheetDesc = document.getElementById('sheet-desc');
+    const sheetTag = document.getElementById('sheet-tag');
+    const sheetMeta = document.getElementById('sheet-meta');
+    const sheetMaps = document.getElementById('sheet-maps');
 
     function addPlaceMarker(p, i) {
         const el = document.createElement('div');
@@ -662,14 +718,31 @@
     function selectPlace(i) {
         const p = PLACES[i];
         activeIndex = i;
-        map3d.flyTo({ center: [p.lng, p.lat], zoom: 14.4, pitch: 68, bearing: -18, duration: 2200, essential: true });
-        if (flyPopup) flyPopup.remove();
-        flyPopup = new maplibregl.Popup({ closeButton: false, offset: 38, maxWidth: '230px' })
-            .setLngLat([p.lng, p.lat]).setHTML(placePopupHTML(p)).addTo(map3d);
+        map3d.flyTo({ center: [p.lng, p.lat], zoom: 14.4, pitch: 68, bearing: -18, duration: 2400, essential: true });
+        openSheet(i);
         document.querySelectorAll('.place-card').forEach((c, ci) => c.classList.toggle('active', ci === i));
         document.querySelectorAll('.map-marker').forEach((m, mi) => m.classList.toggle('active', mi === i));
         const card = document.querySelectorAll('.place-card')[i];
         if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+
+    function openSheet(i) {
+        const p = PLACES[i];
+        sheetImg.src = p.img;
+        sheetName.textContent = p.name;
+        sheetDesc.textContent = p.desc;
+        sheetTag.textContent = p.cat;
+        sheetMeta.textContent = p.alt.toLocaleString('es-PE') + ' msnm';
+        sheetMaps.href = 'https://www.google.com/maps/search/?api=1&query=' +
+            encodeURIComponent(p.name + ' Yungay Áncash Perú');
+        placeSheet.classList.add('open');
+    }
+
+    function deselectPlace() {
+        activeIndex = -1;
+        placeSheet.classList.remove('open');
+        document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.map-marker').forEach(m => m.classList.remove('active'));
     }
 
     function initMap3D() {
@@ -711,9 +784,9 @@
                 }
             },
             center: YUNGAY_CENTER,   // centro aproximado de la provincia de Yungay
-            zoom: 12.2,
-            pitch: 60,
-            bearing: -22,
+            zoom: 10.4,              // vista amplia; la intro cinematográfica hace el acercamiento
+            pitch: 0,
+            bearing: 0,
             minZoom: 9.5,
             maxPitch: 85,
             // Limita la vista a la zona de Yungay (Áncash)
@@ -726,9 +799,51 @@
 
         map3d.on('load', () => {
             map3d.setTerrain({ source: 'terrain', exaggeration: 1.6 });
+
+            // Luz direccional: da volumen y sombras suaves al relieve
+            try {
+                map3d.setLight({ anchor: 'viewport', color: '#ffffff', intensity: 0.55, position: [1.15, 210, 30] });
+            } catch (e) { /* versión sin soporte de luz */ }
+
+            // Ruta turística punteada, dibujada sobre el terreno
+            map3d.addSource('route', {
+                type: 'geojson',
+                data: {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: ROUTE.map(idx => [PLACES[idx].lng, PLACES[idx].lat])
+                    }
+                }
+            });
+            map3d.addLayer({
+                id: 'route-halo', type: 'line', source: 'route',
+                layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: { 'line-color': '#b58f5c', 'line-width': 7, 'line-opacity': 0.3, 'line-blur': 3 }
+            });
+            map3d.addLayer({
+                id: 'route-line', type: 'line', source: 'route',
+                layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: { 'line-color': '#f4ecdc', 'line-width': 2.6, 'line-dasharray': [0.05, 1.8] }
+            });
+
             PLACES.forEach((p, i) => addPlaceMarker(p, i));
             buildCards();
+
+            // Ocultar las etiquetas de texto cuando el mapa está alejado
+            const mapEl = document.getElementById('map-3d');
+            map3d.on('zoom', () => mapEl.classList.toggle('zoom-low', map3d.getZoom() < 11.3));
+            mapEl.classList.toggle('zoom-low', map3d.getZoom() < 11.3);
         });
+    }
+
+    // Intro cinematográfica: sobrevuela y desciende hacia Yungay
+    let introDone = false;
+    function cinematicIntro() {
+        map3d.easeTo({ center: [-77.60, -9.14], zoom: 11.0, pitch: 35, bearing: -55, duration: 2800 });
+        setTimeout(() => {
+            map3d.easeTo({ center: YUNGAY_CENTER, zoom: 12.2, pitch: 60, bearing: -22, duration: 2800 });
+        }, 2900);
     }
 
     // Tour automático por los lugares
@@ -748,10 +863,7 @@
     function resetMap3D() {
         if (tourTimer) { clearInterval(tourTimer); tourTimer = null; }
         document.getElementById('tour-icon').className = 'ph ph-play font-bold';
-        if (flyPopup) { flyPopup.remove(); flyPopup = null; }
-        activeIndex = -1;
-        document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.map-marker').forEach(m => m.classList.remove('active'));
+        deselectPlace();
         map3d.flyTo({ center: YUNGAY_CENTER, zoom: 12.2, pitch: 60, bearing: -22, duration: 1600 });
     }
 
